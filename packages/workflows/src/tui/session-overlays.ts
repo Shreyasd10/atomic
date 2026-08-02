@@ -25,6 +25,7 @@
 
 import type { PiCustomComponent, PiCustomOverlayFactoryTui, PiCustomOverlayFunction } from "../extension/wiring.js";
 import type { Store } from "../shared/store.js";
+import { subscribeStoreInvalidation } from "../shared/store-observation.js";
 import type { GraphTheme } from "./graph-theme.js";
 import {
 	createSessionPickerState,
@@ -96,7 +97,7 @@ export function openSessionPicker(
 			};
 			// Re-render on store changes so newly-started runs appear and
 			// status icons refresh without the user having to press a key.
-			unsubscribe = store.subscribe(() => tui.requestRender?.());
+			unsubscribe = subscribeStoreInvalidation(store, () => tui.requestRender?.());
 			return {
 				render: (width: number) => {
 					const rows = selectRunsForPicker(store.runs(), state.query, state.includeAll);

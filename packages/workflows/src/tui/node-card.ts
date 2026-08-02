@@ -144,7 +144,7 @@ function workflowChildSummaryText(stage: StageSnapshot): string {
 function workflowChildMetaText(stage: StageSnapshot): string {
 	const completed = stage.workflowChild;
 	if (completed !== undefined) {
-		const outputCount = Object.keys(completed.outputs).length;
+		const outputCount = completed.outputCount ?? Object.keys(completed.outputs).length;
 		const outputs = outputCount === 1 ? "1 out" : `${outputCount} outs`;
 		return `run ${shortRunId(completed.runId)} · ${outputs}`;
 	}
