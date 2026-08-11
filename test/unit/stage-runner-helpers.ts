@@ -37,6 +37,39 @@ export type {
 };
 export { assert, createStageContext, join, mkdtemp, readFile, rm, Type, tmpdir, writeFile };
 
+export interface AssistantUsageValues {
+	readonly input: number;
+	readonly output: number;
+	readonly cacheRead: number;
+	readonly cacheWrite: number;
+	readonly cost: number;
+}
+
+/**
+ * Build a scripted assistant message carrying a concrete per-bucket usage
+ * payload. Bucket values are kept distinct per fixture so accidental merging
+ * or cross-bucket attribution is visible in aggregate assertions.
+ */
+export function assistantMessageWithUsage(
+	text: string,
+	values: AssistantUsageValues,
+	stopReason: "stop" | "error" = "stop",
+): AgentSession["messages"][number] {
+	return {
+		role: "assistant",
+		content: [{ type: "text", text }],
+		usage: {
+			input: values.input,
+			output: values.output,
+			cacheRead: values.cacheRead,
+			cacheWrite: values.cacheWrite,
+			totalTokens: values.input + values.output + values.cacheRead + values.cacheWrite,
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: values.cost },
+		},
+		stopReason,
+	} as unknown as AgentSession["messages"][number];
+}
+
 export function makeSignal(): AbortSignal {
 	return new AbortController().signal;
 }
