@@ -220,7 +220,14 @@ export class StageSessionController {
 	/** Message index latched once per high-level candidate prompt; never re-read later. */
 	private attemptUsageStartIndex: number | undefined;
 	/** Usage accrued from error assistants removed by retry restoration. */
-	private discardedAttemptUsage: AttemptUsageTotals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 };
+	private discardedAttemptUsage: AttemptUsageTotals = {
+		input: 0,
+		output: 0,
+		cacheRead: 0,
+		cacheWrite: 0,
+		cost: 0,
+		turns: 0,
+	};
 	private readonly terminatingToolCallIds = new Set<string>();
 	private latestStructuredOutputToolErrorValue: string | undefined;
 	private unsubscribeTerminateWatcher: (() => void) | undefined;

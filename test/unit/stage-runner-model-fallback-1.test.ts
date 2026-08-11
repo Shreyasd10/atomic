@@ -5,7 +5,14 @@ import type {
 	InternalStageContext,
 	StageSessionCreateOptions,
 } from "./stage-runner-helpers.js";
-import { assert, assistantMessageWithUsage, createStageContext, makeMockSession, makeOpts, Type } from "./stage-runner-helpers.js";
+import {
+	assert,
+	assistantMessageWithUsage,
+	createStageContext,
+	makeMockSession,
+	makeOpts,
+	Type,
+} from "./stage-runner-helpers.js";
 
 const USAGE_A = { input: 11, output: 22, cacheRead: 33, cacheWrite: 44, cost: 0.011 };
 const USAGE_B = { input: 111, output: 222, cacheRead: 333, cacheWrite: 444, cost: 0.111 };
@@ -209,13 +216,17 @@ describe("createStageContext — model fallback", () => {
 					async prompt() {
 						if (model === "anthropic/primary") {
 							messages.push(
-								assistantMessageWithUsage("empty provider response", {
-									input: 0,
-								output: 0,
-								cacheRead: 0,
-								cacheWrite: 0,
-								cost: 0,
-							}, "error"),
+								assistantMessageWithUsage(
+									"empty provider response",
+									{
+										input: 0,
+										output: 0,
+										cacheRead: 0,
+										cacheWrite: 0,
+										cost: 0,
+									},
+									"error",
+								),
 							);
 							return;
 						}

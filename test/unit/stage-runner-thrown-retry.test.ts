@@ -116,7 +116,13 @@ describe("createStageContext — thrown model failure retry", () => {
 	test("a same-model retry keeps the dropped error assistant's usage in the attempt aggregate", async () => {
 		const messages: StageSessionRuntime["messages"] = [
 			// Historical transcript usage must never be charged to this attempt.
-			assistantMessageWithUsage("historical answer", { input: 9999, output: 8888, cacheRead: 7777, cacheWrite: 6666, cost: 9.99 }),
+			assistantMessageWithUsage("historical answer", {
+				input: 9999,
+				output: 8888,
+				cacheRead: 7777,
+				cacheWrite: 6666,
+				cost: 9.99,
+			}),
 		];
 		let promptCalls = 0;
 		const settings = retrySettings();
@@ -129,12 +135,22 @@ describe("createStageContext — thrown model failure retry", () => {
 						messages.push({ role: "user", content: "go", timestamp: Date.now() } as never);
 						if (promptCalls === 1) {
 							messages.push(
-								assistantMessageWithUsage("failed attempt", { input: 11, output: 22, cacheRead: 33, cacheWrite: 44, cost: 0.011 }, "error"),
+								assistantMessageWithUsage(
+									"failed attempt",
+									{ input: 11, output: 22, cacheRead: 33, cacheWrite: 44, cost: 0.011 },
+									"error",
+								),
 							);
 							throw new Error("503 service unavailable");
 						}
 						messages.push(
-							assistantMessageWithUsage("final answer", { input: 111, output: 222, cacheRead: 333, cacheWrite: 444, cost: 0.111 }),
+							assistantMessageWithUsage("final answer", {
+								input: 111,
+								output: 222,
+								cacheRead: 333,
+								cacheWrite: 444,
+								cost: 0.111,
+							}),
 						);
 						return "ok";
 					},
@@ -804,7 +820,13 @@ describe("createStageContext — continuation eligibility across admitted orderi
 			admit: (messages, call) => {
 				if (call === 2) {
 					messages.push(
-						assistantMessageWithUsage("resumed answer", { input: 111, output: 222, cacheRead: 333, cacheWrite: 444, cost: 0.111 }),
+						assistantMessageWithUsage("resumed answer", {
+							input: 111,
+							output: 222,
+							cacheRead: 333,
+							cacheWrite: 444,
+							cost: 0.111,
+						}),
 					);
 				}
 			},

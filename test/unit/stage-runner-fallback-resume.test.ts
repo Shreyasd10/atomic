@@ -157,7 +157,15 @@ describe("reattached follow-up resumes on the last working model (#1431 follow-u
 					// Historical usage from the pre-completion transcript must never be
 					// charged to the follow-up attempt, even though it is large and
 					// distinct from the new response.
-					history: [assistantMessageWithUsage("historical answer", { input: 9999, output: 8888, cacheRead: 7777, cacheWrite: 6666, cost: 9.99 })],
+					history: [
+						assistantMessageWithUsage("historical answer", {
+							input: 9999,
+							output: 8888,
+							cacheRead: 7777,
+							cacheWrite: 6666,
+							cost: 9.99,
+						}),
+					],
 					assistantUsage: { input: 11, output: 22, cacheRead: 33, cacheWrite: 44, cost: 0.011 },
 				});
 			}
