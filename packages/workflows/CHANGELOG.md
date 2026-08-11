@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Workflow command, worktree Git/setup-hook, and Playwright CLI subprocesses now receive `AI_AGENT=atomic` for generic child-process attribution without mutating caller-supplied environment objects.
 
-- Workflow model fallback attempt metadata now includes per-attempt input/output tokens, cache reads/writes, provider-reported total cost, and meaningful assistant-turn counts when usage is available.
+- Workflow model fallback attempt metadata now includes per-attempt input/output tokens, cache reads/writes, provider-reported total cost, and meaningful assistant-turn counts when usage is available ([#2197](https://github.com/bastani-inc/atomic/issues/2197)).
 
 ### Fixed
 

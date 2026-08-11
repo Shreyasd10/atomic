@@ -82,19 +82,14 @@ type AttemptUsageTotals = {
 
 /**
  * A present usage object is meaningful when any token bucket, the total token
- * count, or the provider-reported total cost is positive. Usage-less test
- * doubles and providers that report no usage are not meaningful.
+ * count, or the provider-reported total cost is positive. Reject the entire
+ * provider record when any aggregated value is non-finite or negative so
+ * malformed telemetry cannot poison a durable stage checkpoint.
  */
 function hasMeaningfulUsage(usage: StageAssistantMessage["usage"] | undefined): boolean {
-	return (
-		usage !== undefined &&
-		(usage.input > 0 ||
-			usage.output > 0 ||
-			usage.cacheRead > 0 ||
-			usage.cacheWrite > 0 ||
-			usage.totalTokens > 0 ||
-			usage.cost.total > 0)
-	);
+	if (usage === undefined) return false;
+	const values = [usage.input, usage.output, usage.cacheRead, usage.cacheWrite, usage.totalTokens, usage.cost.total];
+	return values.every((value) => Number.isFinite(value) && value >= 0) && values.some((value) => value > 0);
 }
 
 /**

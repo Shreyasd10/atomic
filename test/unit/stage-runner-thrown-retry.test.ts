@@ -294,19 +294,47 @@ describe("createStageContext — thrown model failure retry", () => {
 		const promptCalls: string[] = [];
 		const created: string[] = [];
 		const disposed: string[] = [];
+		let primaryPromptCalls = 0;
 		const settings = retrySettings();
 		const agentSession: AgentSessionAdapter = {
 			async create(options) {
 				const model = modelFor(options);
 				created.push(model);
+				const messages: StageSessionRuntime["messages"] = [];
 				return sessionWithSettings(
 					settings,
 					async () => {
 						promptCalls.push(model);
-						if (model === "anthropic/primary") throw new Error("503 service unavailable");
+						if (model === "anthropic/primary") {
+							primaryPromptCalls += 1;
+							messages.push(
+								assistantMessageWithUsage(
+									`failed response ${primaryPromptCalls}`,
+									{
+										input: primaryPromptCalls,
+										output: primaryPromptCalls * 2,
+										cacheRead: primaryPromptCalls * 3,
+										cacheWrite: primaryPromptCalls * 4,
+										cost: primaryPromptCalls / 1000,
+									},
+									"error",
+								),
+							);
+							throw new Error("503 service unavailable");
+						}
+						messages.push(
+							assistantMessageWithUsage("fallback answer", {
+								input: 10,
+								output: 20,
+								cacheRead: 30,
+								cacheWrite: 40,
+								cost: 0.01,
+							}),
+						);
 						return "fallback answer";
 					},
 					{
+						messages,
 						dispose: () => {
 							disposed.push(model);
 						},
@@ -330,13 +358,19 @@ describe("createStageContext — thrown model failure retry", () => {
 		assert.deepEqual(promptCalls, ["anthropic/primary", "anthropic/primary", "anthropic/primary", "openai/fallback"]);
 		assert.deepEqual(created, ["anthropic/primary", "openai/fallback"]);
 		assert.deepEqual(disposed, ["anthropic/primary"]);
-		assert.deepEqual(
-			ctx.__modelFallbackMeta().modelAttempts?.map(({ model, success }) => ({ model, success })),
-			[
-				{ model: "anthropic/primary", success: false },
-				{ model: "openai/fallback", success: true },
-			],
-		);
+		assert.deepEqual(ctx.__modelFallbackMeta().modelAttempts, [
+			{
+				model: "anthropic/primary",
+				success: false,
+				error: "503 service unavailable",
+				usage: { input: 6, output: 12, cacheRead: 18, cacheWrite: 24, cost: 0.006, turns: 3 },
+			},
+			{
+				model: "openai/fallback",
+				success: true,
+				usage: { input: 10, output: 20, cacheRead: 30, cacheWrite: 40, cost: 0.01, turns: 1 },
+			},
+		]);
 	});
 
 	test("retries session creation on the same candidate before advancing", async () => {
@@ -794,11 +828,25 @@ describe("createStageContext — continuation eligibility across admitted orderi
 			failCalls: 1,
 			admit: (messages, call) => {
 				if (call === 1) {
-					messages.push({
-						role: "assistant",
-						stopReason: "stop",
-						content: [{ type: "text", text: "partial" }],
-					} as never);
+					messages.push(
+						assistantMessageWithUsage("partial", {
+							input: 1,
+							output: 2,
+							cacheRead: 3,
+							cacheWrite: 4,
+							cost: 0.001,
+						}),
+					);
+				} else {
+					messages.push(
+						assistantMessageWithUsage("final", {
+							input: 111,
+							output: 222,
+							cacheRead: 333,
+							cacheWrite: 444,
+							cost: 0.111,
+						}),
+					);
 				}
 			},
 		});
@@ -810,6 +858,11 @@ describe("createStageContext — continuation eligibility across admitted orderi
 		assert.deepEqual(probe.continuedTranscripts, [], "an assistant tail is not a valid continuation");
 		assert.deepEqual(probe.promptTexts, ["do it", "do it"], "the retry must re-send the prompt instead");
 		assert.equal(userMessagesWithText(probe.messages, "do it"), 1, "the re-prompt must not duplicate the input");
+		assert.deepEqual(
+			ctx.__modelFallbackMeta().modelAttempts?.[0]?.usage,
+			{ input: 123, output: 246, cacheRead: 369, cacheWrite: 492, cost: 0.123, turns: 3 },
+			"the latched window includes the retained response, discarded error, and re-prompt response",
+		);
 	});
 
 	test("a pause during backoff drops the retained prompt and uses the resumed text", async () => {

@@ -67,8 +67,8 @@ describe("createStageContext — model fallback", () => {
 		assert.equal(meta.modelAttempts?.[0]?.error, "429 rate limit exceeded");
 		assert.equal(meta.warnings, undefined);
 		// Neither attempt admitted an assistant response, so neither may carry usage.
-		assert.equal(meta.modelAttempts?.[0]?.usage, undefined);
-		assert.equal(meta.modelAttempts?.[1]?.usage, undefined);
+		assert.equal(Object.hasOwn(meta.modelAttempts?.[0] ?? {}, "usage"), false);
+		assert.equal(Object.hasOwn(meta.modelAttempts?.[1] ?? {}, "usage"), false);
 	});
 
 	test("a successful candidate with one meaningful assistant reports the exact usage aggregate", async () => {
@@ -250,12 +250,103 @@ describe("createStageContext — model fallback", () => {
 		assert.equal(await ctx.prompt("go"), "fallback answer");
 		const meta = ctx.__modelFallbackMeta();
 		assert.deepEqual(meta.attemptedModels, ["anthropic/primary", "openai/fallback"]);
-		assert.equal(meta.modelAttempts?.[0]?.usage, undefined);
+		assert.equal(Object.hasOwn(meta.modelAttempts?.[0] ?? {}, "usage"), false);
 		assert.deepEqual(meta.modelAttempts?.[1], {
 			model: "openai/fallback",
 			success: true,
 			usage: { ...USAGE_A, turns: 1 },
 		});
+	});
+
+	test("cost-only and total-token-only signals each count as meaningful turns", async () => {
+		const messages: AgentSession["messages"] = [];
+		const agentSession: AgentSessionAdapter = {
+			async create() {
+				const { session } = makeMockSession({
+					messages,
+					async prompt() {
+						messages.push(
+							assistantMessageWithUsage("cost-only", {
+								input: 0,
+								output: 0,
+								cacheRead: 0,
+								cacheWrite: 0,
+								cost: 0.25,
+								totalTokens: 0,
+							}),
+							assistantMessageWithUsage("total-only", {
+								input: 0,
+								output: 0,
+								cacheRead: 0,
+								cacheWrite: 0,
+								cost: 0,
+								totalTokens: 7,
+							}),
+						);
+					},
+					getLastAssistantText: () => "total-only",
+				});
+				return session;
+			},
+		};
+		const ctx = createStageContext(
+			makeOpts({ adapters: { agentSession }, stageOptions: { model: "anthropic/primary" } }),
+		) as InternalStageContext;
+
+		assert.equal(await ctx.prompt("go"), "total-only");
+		assert.deepEqual(ctx.__modelFallbackMeta().modelAttempts?.[0]?.usage, {
+			input: 0,
+			output: 0,
+			cacheRead: 0,
+			cacheWrite: 0,
+			cost: 0.25,
+			turns: 2,
+		});
+	});
+
+	test("malformed usage records are omitted instead of poisoning the aggregate", async () => {
+		const messages: AgentSession["messages"] = [];
+		const agentSession: AgentSessionAdapter = {
+			async create() {
+				const { session } = makeMockSession({
+					messages,
+					async prompt() {
+						messages.push(
+							assistantMessageWithUsage("nan", {
+								input: 1,
+								output: Number.NaN,
+								cacheRead: 0,
+								cacheWrite: 0,
+								cost: 0,
+							}),
+							assistantMessageWithUsage("infinite", {
+								input: Number.POSITIVE_INFINITY,
+								output: 0,
+								cacheRead: 0,
+								cacheWrite: 0,
+								cost: 0,
+							}),
+							assistantMessageWithUsage("negative", {
+								input: 1,
+								output: -1,
+								cacheRead: 0,
+								cacheWrite: 0,
+								cost: 0,
+								totalTokens: 0,
+							}),
+						);
+					},
+					getLastAssistantText: () => "negative",
+				});
+				return session;
+			},
+		};
+		const ctx = createStageContext(
+			makeOpts({ adapters: { agentSession }, stageOptions: { model: "anthropic/primary" } }),
+		) as InternalStageContext;
+
+		assert.equal(await ctx.prompt("go"), "negative");
+		assert.equal(Object.hasOwn(ctx.__modelFallbackMeta().modelAttempts?.[0] ?? {}, "usage"), false);
 	});
 
 	test("schema-backed structured_output capture prevents fallback retry after a later model error", async () => {

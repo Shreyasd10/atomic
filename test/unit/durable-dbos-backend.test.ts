@@ -175,9 +175,12 @@ describe("DbosDurableBackend (mock SDK)", () => {
 
 		const env = encodeCheckpoint(cp);
 		assert.ok(Array.isArray(env.modelAttempts));
+		const encodedAttempt = env.modelAttempts[0];
+		assert.ok(encodedAttempt !== null && typeof encodedAttempt === "object" && !Array.isArray(encodedAttempt));
+		assert.equal(Object.hasOwn(encodedAttempt, "usage"), false);
 		const decoded = decodeToCheckpoint("wf-stage-nousage", "stage:review:2", env);
 		assert.ok(decoded?.kind === "stage");
-		assert.equal(decoded.modelAttempts?.[0]?.usage, undefined);
+		assert.equal(Object.hasOwn(decoded.modelAttempts?.[0] ?? {}, "usage"), false);
 	});
 
 	test("rejects non-numeric or non-finite nested model usage at the decode boundary", () => {

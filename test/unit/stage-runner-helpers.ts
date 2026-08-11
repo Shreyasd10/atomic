@@ -43,6 +43,7 @@ export interface AssistantUsageValues {
 	readonly cacheRead: number;
 	readonly cacheWrite: number;
 	readonly cost: number;
+	readonly totalTokens?: number;
 }
 
 /**
@@ -63,7 +64,7 @@ export function assistantMessageWithUsage(
 			output: values.output,
 			cacheRead: values.cacheRead,
 			cacheWrite: values.cacheWrite,
-			totalTokens: values.input + values.output + values.cacheRead + values.cacheWrite,
+			totalTokens: values.totalTokens ?? values.input + values.output + values.cacheRead + values.cacheWrite,
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: values.cost },
 		},
 		stopReason,
