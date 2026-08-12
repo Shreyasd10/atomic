@@ -1,4 +1,4 @@
-import { type Terminal, TUI } from "@earendil-works/pi-tui";
+import { type Terminal, TuiMainScreen } from "@earendil-works/pi-tui";
 import { beforeAll, describe, expect, it } from "vitest";
 import { KeybindingsManager } from "../src/core/keybindings.ts";
 import { CustomEditor } from "../src/modes/interactive/components/custom-editor.ts";
@@ -45,7 +45,11 @@ function withPlatform(platform: NodeJS.Platform, run: () => void): void {
 }
 
 function createEditor(userBindings: ConstructorParameters<typeof KeybindingsManager>[0] = {}): CustomEditor {
-	return new CustomEditor(new TUI(new FakeTerminal()), getEditorTheme(), new KeybindingsManager(userBindings));
+	return new CustomEditor(
+		new TuiMainScreen(new FakeTerminal()),
+		getEditorTheme(),
+		new KeybindingsManager(userBindings),
+	);
 }
 
 describe("CustomEditor macOS empty paste routing", () => {
