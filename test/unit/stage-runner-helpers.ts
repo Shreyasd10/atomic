@@ -46,6 +46,8 @@ export interface AssistantUsageValues {
 	readonly totalTokens?: number;
 }
 
+type TestAssistantMessage = Extract<AgentSession["messages"][number], { role: "assistant" }>;
+
 /**
  * Build a scripted assistant message carrying a concrete per-bucket usage
  * payload. Bucket values are kept distinct per fixture so accidental merging
@@ -56,9 +58,12 @@ export function assistantMessageWithUsage(
 	values: AssistantUsageValues,
 	stopReason: "stop" | "error" = "stop",
 ): AgentSession["messages"][number] {
-	return {
+	const message = {
 		role: "assistant",
 		content: [{ type: "text", text }],
+		api: "anthropic-messages",
+		provider: "anthropic",
+		model: "test-model",
 		usage: {
 			input: values.input,
 			output: values.output,
@@ -68,7 +73,9 @@ export function assistantMessageWithUsage(
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: values.cost },
 		},
 		stopReason,
-	} as unknown as AgentSession["messages"][number];
+		timestamp: 0,
+	} satisfies TestAssistantMessage;
+	return message;
 }
 
 export function makeSignal(): AbortSignal {

@@ -183,7 +183,7 @@ describe("DbosDurableBackend (mock SDK)", () => {
 		assert.equal(Object.hasOwn(decoded.modelAttempts?.[0] ?? {}, "usage"), false);
 	});
 
-	test("rejects non-numeric or non-finite nested model usage at the decode boundary", () => {
+	test("rejects non-numeric, non-finite, or negative nested model usage at the decode boundary", () => {
 		const cp: DurableStageCheckpoint = {
 			kind: "stage",
 			workflowId: "wf-stage-malformed",
@@ -214,6 +214,16 @@ describe("DbosDurableBackend (mock SDK)", () => {
 						model: "gpt-test",
 						success: true,
 						usage: { input: 1, output: 2, cacheRead: 3, cacheWrite: 4, cost: Number.POSITIVE_INFINITY, turns: 1 },
+					},
+				],
+			},
+			{
+				...base,
+				modelAttempts: [
+					{
+						model: "gpt-test",
+						success: true,
+						usage: { input: 1, output: 2, cacheRead: -3, cacheWrite: 4, cost: 0.0042, turns: 1 },
 					},
 				],
 			},

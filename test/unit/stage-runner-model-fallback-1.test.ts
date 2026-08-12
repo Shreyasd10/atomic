@@ -209,8 +209,10 @@ describe("createStageContext — model fallback", () => {
 		const messages: AgentSession["messages"] = [];
 		const agentSession: AgentSessionAdapter = {
 			async create(options) {
-				const modelValue = options.model as unknown;
-				const model = typeof modelValue === "string" ? modelValue : "object-model";
+				const model =
+					typeof options.model === "string"
+						? options.model
+						: `${String(options.model?.provider)}/${options.model?.id}`;
 				const { session } = makeMockSession({
 					messages,
 					async prompt() {
