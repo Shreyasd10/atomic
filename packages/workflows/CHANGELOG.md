@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Added a live needs-input affordance to the wide `BACKGROUND` panel for a visible run tree with exactly one displayable human-in-the-loop prompt. The card preserves the full workflow identity and width-bounded pending-stage/tool metadata, shows a bounded question and exact `/workflow connect <full-run-id>` action, adds `F2 answer` only when F2 targets that run, and repaints back to the ordinary row when the exact prompt clears. Interactive users answer through F2 or the connected workflow, while agents retain the exact `workflow answer` run/stage/prompt path; promptless, multi-question, or ambiguous trees remain status-only and no prompt content enters parent chat or model context ([#2529](https://github.com/bastani-inc/atomic/issues/2529)).
+
 ## [0.9.18-alpha.3] - 2026-09-01
 
 ### Added
